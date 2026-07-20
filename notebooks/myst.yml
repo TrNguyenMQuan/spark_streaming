@@ -1,0 +1,9 @@
+version: 1
+project:
+  title: "Lab 04 — Incremental CPG Streaming Pipeline"
+  toc:
+    - file: intro.md
+    - file: 01_file_discovery.ipynb
+site:
+  title: "Lab 04 — CPG Streaming Pipeline"
+  template: book-theme
