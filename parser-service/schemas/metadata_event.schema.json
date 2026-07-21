@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lab04.local/schemas/metadata_event.schema.json",
+  "title": "Source Metadata Event",
+  "description": "Thong tin cap FILE (khong phai tung node). Publish len topic 'code.events.metadata'. Message KEY = file_path (de ban metadata moi ghi de ban cu -> upsert theo file). Day la nguon du lieu Spark ghi vao MongoDB (Task 5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_timestamp",
+    "file_path",
+    "file_hash",
+    "language",
+    "loc",
+    "num_nodes",
+    "num_edges",
+    "repo_commit"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Phien ban schema."
+    },
+    "event_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event-time: thoi diem parser xu ly xong file nay (ISO 8601 UTC)."
+    },
+    "file_path": {
+      "type": "string",
+      "description": "Duong dan tuong doi cua file (dong thoi la KEY cua message)."
+    },
+    "file_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 cua NOI DUNG file. Dung de biet file co doi hay khong giua 2 lan parse (quan trong cho Task 6 replay)."
+    },
+    "language": {
+      "type": "string",
+      "description": "Ngon ngu, o day luon la 'python'."
+    },
+    "loc": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "So dong code (lines of code) cua file."
+    },
+    "num_nodes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "So node CPG sinh ra tu file nay."
+    },
+    "num_edges": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "So canh CPG sinh ra tu file nay."
+    },
+    "repo": {
+      "type": "string",
+      "description": "Ten repo dang phan tich."
+    },
+    "repo_commit": {
+      "type": "string",
+      "description": "Commit hash cua repo luc parse."
+    }
+  }
+}

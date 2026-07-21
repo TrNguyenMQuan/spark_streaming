@@ -1,0 +1,86 @@
+# KRaft mode: 1 process vừa là broker vừa là controller -> không cần Zookeeper
+name: lab04-cpg-pipeline
+
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"          # client trên máy HOST kết nối qua localhost:9092
+    environment:
+      # KRaft (gộp cả broker lẫn controller)
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw          # ID cụm cố định để tái lập được
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # 3 listener: CONTROLLER (nội bộ KRaft) / EXTERNAL (host) / INTERNAL (container)
+      KAFKA_LISTENERS: CONTROLLER://kafka:9093,EXTERNAL://kafka:9092,INTERNAL://kafka:19092
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://localhost:9092,INTERNAL://kafka:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      # Chỉ 1 broker nên mọi replication-factor nội bộ phải = 1 (không thể > số broker)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      # Tắt auto-create: tự tạo topic (kiểm soát partition/replication) qua service kafka-init
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+    # Giao diện web
+  kafka-ui:
+    image: kafbat/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: lab04-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    restart: unless-stopped
+
+  # Service dùng-một-lần: tạo 4 topic rồi thoát. Chạy lại nhiều lần vẫn an toàn nhờ --if-not-exists.
+  kafka-init:
+    image: apache/kafka:3.9.0
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy          # đợi broker healthy mới tạo topic
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        # Node & Edges: 3 partition because it has huge volume
+        for t in code.events.nodes code.events.edges; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 \
+            --create --if-not-exists --topic "$$t" \
+            --partitions 3 --replication-factor 1
+        done
+        # Metadata and error only need 1
+        for t in code.events.metadata code.events.errors; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 \
+            --create --if-not-exists --topic "$$t" \
+            --partitions 1 --replication-factor 1
+        done
+        echo "List of topic is: "
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --list
+    restart: "no"
+
+volumes:
+  kafka-data:

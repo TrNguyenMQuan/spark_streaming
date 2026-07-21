@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lab04.local/schemas/edge_event.schema.json",
+  "title": "CPG Edge Event",
+  "description": "Mot canh (edge) trong Code Property Graph noi 2 node. Publish len topic 'code.events.edges'. Message KEY = file_path (gom moi event cua cung 1 file vao cung partition). Chong trung dua vao Cypher MERGE theo edge_id trong payload, khong dua vao Kafka key.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_timestamp",
+    "edge_id",
+    "edge_type",
+    "source_node_id",
+    "target_node_id",
+    "file_path",
+    "repo_commit"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Phien ban schema."
+    },
+    "event_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event-time: thoi diem parser sinh ra canh nay (ISO 8601 UTC)."
+    },
+    "edge_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16,64}$",
+      "description": "Stable ID = sha256(edge_type + source_node_id + target_node_id + [bien DFG neu co]). On dinh qua cac lan parse."
+    },
+    "edge_type": {
+      "type": "string",
+      "enum": ["AST", "CFG", "DFG", "CALL"],
+      "description": "Loai canh: AST (cha-con trong cay cu phap), CFG (luong dieu khien), DFG (luong du lieu def-use), CALL (ham goi ham)."
+    },
+    "source_node_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16,64}$",
+      "description": "node_id cua node nguon (dau canh)."
+    },
+    "target_node_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16,64}$",
+      "description": "node_id cua node dich (cuoi canh)."
+    },
+    "dfg_variable": {
+      "type": ["string", "null"],
+      "description": "Chi dung cho canh DFG: ten bien duoc def o source va use o target. null voi cac loai canh khac."
+    },
+    "file_path": {
+      "type": "string",
+      "description": "File chua canh nay."
+    },
+    "repo_commit": {
+      "type": "string",
+      "description": "Commit hash cua repo luc parse."
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lab04.local/schemas/error_event.schema.json",
+  "title": "Parser Error Event",
+  "description": "Ghi lai file nao parse loi (vi du SyntaxError). Publish len topic 'code.events.errors'. Message KEY = file_path. Muc dich: parser KHONG crash toan bo khi 1 file loi, ma day loi vao topic nay roi doc tiep file khac.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_timestamp",
+    "file_path",
+    "error_type",
+    "error_message",
+    "repo_commit"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Phien ban schema."
+    },
+    "event_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event-time: thoi diem xay ra loi (ISO 8601 UTC)."
+    },
+    "file_path": {
+      "type": "string",
+      "description": "File bi loi."
+    },
+    "error_type": {
+      "type": "string",
+      "description": "Loai loi, vi du 'SyntaxError', 'UnicodeDecodeError', 'RecursionError'."
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Noi dung loi ngan gon."
+    },
+    "stack_trace": {
+      "type": ["string", "null"],
+      "description": "Stack trace rut gon (tuy chon), cat ngan de tranh message qua lon."
+    },
+    "repo_commit": {
+      "type": "string",
+      "description": "Commit hash cua repo luc parse."
+    }
+  }
+}

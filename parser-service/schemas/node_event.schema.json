@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lab04.local/schemas/node_event.schema.json",
+  "title": "CPG Node Event",
+  "description": "Mot node trong Code Property Graph (chu yeu la AST node). Publish len topic 'code.events.nodes'. Message KEY = file_path (gom moi event cua cung 1 file vao cung partition, giu dung thu tu). Chong trung KHONG dua vao Kafka key ma dua vao Cypher MERGE theo node_id trong payload.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_timestamp",
+    "node_id",
+    "node_type",
+    "file_path",
+    "line_start",
+    "line_end",
+    "repo_commit"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Phien ban schema. Giup consumer doc dung message cu khi schema doi trong tuong lai (forward compatibility)."
+    },
+    "event_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event-time: thoi diem parser sinh ra node nay (ISO 8601 UTC). KHONG phai thoi diem Kafka nhan message."
+    },
+    "node_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16,64}$",
+      "description": "Stable ID = sha256(file_path | qualified_scope | node_type | sibling_index)[:24]. KHONG chua so dong (line_start/line_end) de khi sua file, node khong bi doi id -> giu idempotent cho Task 6. On dinh qua cac lan parse lai -> nen tang cua idempotency."
+    },
+    "node_type": {
+      "type": "string",
+      "description": "Loai node AST, vi du: Module, FunctionDef, ClassDef, If, For, While, Try, Call, Assign, Name, Return..."
+    },
+    "name": {
+      "type": ["string", "null"],
+      "description": "Ten bieu tuong neu co (ten ham/lop/bien). null neu node khong co ten (vi du: node If)."
+    },
+    "file_path": {
+      "type": "string",
+      "description": "Duong dan tuong doi cua file trong repo, vi du 'src/models/bert.py'."
+    },
+    "line_start": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Dong bat dau cua node trong file (1-based theo ast). Chi la thuoc tinh MO TA, KHONG nam trong hash node_id; duoc cap nhat qua MERGE...SET moi lan parse lai."
+    },
+    "line_end": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Dong ket thuc cua node. Chi la thuoc tinh MO TA, KHONG nam trong hash node_id."
+    },
+    "col_start": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Cot bat dau (tuy chon)."
+    },
+    "col_end": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Cot ket thuc (tuy chon)."
+    },
+    "code_snippet": {
+      "type": ["string", "null"],
+      "description": "Doan code ngan (tuy chon) de doi chieu. NEN cat ngan (vi du <= 200 ky tu) tranh message qua lon."
+    },
+    "repo": {
+      "type": "string",
+      "description": "Ten repo dang phan tich, vi du 'huggingface/transformers-pr-agent'."
+    },
+    "repo_commit": {
+      "type": "string",
+      "description": "Commit hash cua repo luc parse. Giup truy vet node thuoc phien ban code nao."
+    }
+  }
+}

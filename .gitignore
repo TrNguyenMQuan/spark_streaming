@@ -4,3 +4,9 @@ target-repo/
 .DS_Store
 .venv/
 _build/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
