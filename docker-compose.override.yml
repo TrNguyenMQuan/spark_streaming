@@ -1,5 +1,6 @@
 # Task 5 services. Docker Compose merges this file with docker-compose.yml, so the
 # Kafka infrastructure owned by the producer team remains unchanged.
+
 services:
   mongodb:
     image: mongo:7.0
@@ -59,5 +60,62 @@ services:
       - /opt/spark-apps/metadata_to_mongodb.py
     restart: on-failure
 
+  neo4j:
+    image: neo4j:5.26.0-community
+    container_name: neo4j
+    hostname: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p password123 'RETURN 1;' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 25s
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:7.8.0
+    container_name: kafka-connect
+    hostname: kafka-connect
+    ports:
+      - "8083:8083"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:19092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: "connect-cluster"
+      CONNECT_CONFIG_STORAGE_TOPIC: "connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "connect-status"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+    volumes:
+      - ./plugins:/usr/share/confluent-hub-components
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f http://localhost:8083/connectors || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
 volumes:
   mongodb-data:
+  neo4j-data:

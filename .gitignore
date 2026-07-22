@@ -1,6 +1,7 @@
 /docs/
 
 target-repo/
+plugins/
 .DS_Store
 .venv/
 _build/
