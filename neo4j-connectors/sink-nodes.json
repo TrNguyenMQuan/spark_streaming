@@ -8,6 +8,6 @@
     "neo4j.authentication.type": "BASIC",
     "neo4j.authentication.basic.username": "neo4j",
     "neo4j.authentication.basic.password": "password123",
-    "neo4j.cypher.topic.code.events.nodes": "MERGE (n:CPGNode {node_id: event.node_id}) SET n += event"
+    "neo4j.topic.cypher.code.events.nodes": "MERGE (n:CPGNode {node_id: event.node_id}) SET n += event WITH n CALL apoc.create.addLabels(n, [n.node_type]) YIELD node RETURN node"
   }
 }
