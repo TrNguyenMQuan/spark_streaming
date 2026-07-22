@@ -4,6 +4,7 @@ project:
   toc:
     - file: intro.md
     - file: 01_file_discovery.ipynb
+    - file: 04_neo4j_ingestion.ipynb
 site:
   title: "Lab 04 — CPG Streaming Pipeline"
   template: book-theme
