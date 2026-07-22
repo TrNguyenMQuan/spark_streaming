@@ -1,0 +1,13 @@
+{
+  "name": "neo4j-sink-nodes",
+  "config": {
+    "connector.class": "org.neo4j.connectors.kafka.sink.Neo4jConnector",
+    "tasks.max": "3",
+    "topics": "code.events.nodes",
+    "neo4j.uri": "bolt://neo4j:7687",
+    "neo4j.authentication.type": "BASIC",
+    "neo4j.authentication.basic.username": "neo4j",
+    "neo4j.authentication.basic.password": "password123",
+    "neo4j.cypher.topic.code.events.nodes": "MERGE (n:CPGNode {node_id: event.node_id}) SET n += event"
+  }
+}
