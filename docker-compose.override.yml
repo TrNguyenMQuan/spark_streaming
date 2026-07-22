@@ -1,0 +1,63 @@
+# Task 5 services. Docker Compose merges this file with docker-compose.yml, so the
+# Kafka infrastructure owned by the producer team remains unchanged.
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: cpg
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\")' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    container_name: mongo-express
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
+      ME_CONFIG_BASICAUTH: "false"
+
+  spark-metadata-to-mongodb:
+    image: apache/spark:3.5.1
+    container_name: spark-metadata-to-mongodb
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      KAFKA_TOPIC: code.events.metadata
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DATABASE: cpg
+      MONGODB_COLLECTION: source_metadata
+      CHECKPOINT_LOCATION: /opt/spark-checkpoints/metadata-to-mongodb
+      STARTING_OFFSETS: earliest
+    volumes:
+      - ./spark-mongo:/opt/spark-apps:ro
+      - ./spark-checkpoints:/opt/spark-checkpoints
+    command:
+      - /opt/spark/bin/spark-submit
+      - --master
+      - local[*]
+      - --conf
+      - spark.jars.ivy=/tmp/.ivy
+      - --packages
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.mongodb.spark:mongo-spark-connector_2.12:10.3.0
+      - /opt/spark-apps/metadata_to_mongodb.py
+    restart: on-failure
+
+volumes:
+  mongodb-data:
