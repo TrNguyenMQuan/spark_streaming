@@ -5,6 +5,8 @@ project:
     - file: intro.md
     - file: 01_file_discovery.ipynb
     - file: 04_neo4j_ingestion.ipynb
+    - file: 05_metadata_ingestion_mongodb.ipynb
+    - file: 06_replay_verification.ipynb
 site:
   title: "Lab 04 — CPG Streaming Pipeline"
   template: book-theme
