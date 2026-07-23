@@ -127,7 +127,7 @@ def check_connector_status():
 
 
 def main():
-    root_dir = Path(__file__).parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent
     ensure_plugin_downloaded(root_dir)
 
     wait_for_service(NEO4J_HTTP, "Neo4j")
