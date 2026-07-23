@@ -8,6 +8,12 @@
     "neo4j.authentication.type": "BASIC",
     "neo4j.authentication.basic.username": "neo4j",
     "neo4j.authentication.basic.password": "password123",
-    "neo4j.topic.cypher.code.events.nodes": "MERGE (n:CPGNode {node_id: event.node_id}) SET n += event WITH n CALL apoc.create.addLabels(n, [n.node_type]) YIELD node RETURN node"
+    "neo4j.topic.cypher.code.events.nodes": "MERGE (n:CPGNode {node_id: event.node_id}) SET n += event WITH n CALL apoc.create.addLabels(n, [n.node_type]) YIELD node RETURN node",
+    "errors.tolerance": "all",
+    "errors.log.enable": "true",
+    "errors.log.include.messages": "true",
+    "errors.deadletterqueue.topic.name": "code.events.dlq",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.deadletterqueue.context.headers.enable": "true"
   }
 }
