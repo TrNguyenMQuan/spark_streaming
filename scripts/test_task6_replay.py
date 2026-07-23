@@ -177,9 +177,13 @@ def main():
         print("==========================================================================")
 
     finally:
-        # 1. Restore original file content
+        # 1. Restore original file content and git state
         print("\nRestoring original file content...")
         TEST_FILE.write_text(original_code, encoding="utf-8")
+        try:
+            subprocess.run(["git", "-C", str(repo_root), "checkout", str(TEST_FILE.name)], capture_output=True)
+        except Exception:
+            pass
         
         # 2. Completely reset Neo4j DB to guarantee zero leftover test nodes/edges
         print("Wiping temporary test nodes and resetting Neo4j DB...")
