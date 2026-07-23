@@ -29,7 +29,7 @@ def ensure_plugin_downloaded(root_dir: Path):
         print("✅ Plugin extracted successfully. (Restart kafka-connect if container is already running)")
 
 
-def wait_for_service(url, name, max_retries=40, delay=3):
+def wait_for_service(url, name, max_retries=70, delay=3):
     print(f"Waiting for {name} at {url}...")
     for i in range(max_retries):
         try:
@@ -49,14 +49,20 @@ def wait_for_service(url, name, max_retries=40, delay=3):
 
 
 def apply_neo4j_constraints():
-    print("Applying Neo4j Cypher unique constraints...")
+    print("Applying Neo4j Cypher unique constraints and relationship indexes...")
     url = "http://localhost:7474/db/neo4j/tx/commit"
-    cypher = (
+    cypher_node_constraint = (
         "CREATE CONSTRAINT unique_cpg_node_id IF NOT EXISTS FOR (n:CPGNode) REQUIRE n.node_id IS UNIQUE"
+    )
+    cypher_edge_index = (
+        "CREATE INDEX cpg_edge_id_idx IF NOT EXISTS FOR ()-[r:CPG_EDGE]-() REQUIRE r.edge_id IS DEFINED"
     )
 
     payload = json.dumps({
-        "statements": [{"statement": cypher}]
+        "statements": [
+            {"statement": cypher_node_constraint},
+            {"statement": cypher_edge_index}
+        ]
     }).encode("utf-8")
 
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
@@ -70,9 +76,9 @@ def apply_neo4j_constraints():
             if errors:
                 print(f"⚠️ Neo4j Cypher error: {errors}")
             else:
-                print("✅ Neo4j constraint applied successfully.")
+                print("✅ Neo4j constraints & relationship indexes applied successfully.")
     except Exception as e:
-        print(f"⚠️ Error applying Neo4j constraint: {e}")
+        print(f"⚠️ Error applying Neo4j constraints: {e}")
 
 
 def register_connector(config_path: Path):
