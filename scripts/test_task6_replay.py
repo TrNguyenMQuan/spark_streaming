@@ -145,18 +145,20 @@ def main():
         print("==========================================================================")
 
     finally:
-        # Restore original code and cleanup temp test nodes in Neo4j
+        # 1. Restore original file content
         print("\nRestoring original file content...")
         TEST_FILE.write_text(original_code, encoding="utf-8")
         
-        print("Cleaning up temporary test nodes from Neo4j DB...")
+        # 2. Completely reset Neo4j DB to guarantee zero leftover test nodes/edges
+        print("Wiping temporary test nodes and resetting Neo4j DB...")
         try:
-            query_neo4j("MATCH (n:CPGNode) WHERE n.name STARTS WITH 'tc' OR n.name STARTS WITH 'Tc' DETACH DELETE n")
+            query_neo4j("MATCH (n) DETACH DELETE n")
         except Exception as e:
             print(f"Cleanup warning: {e}")
 
+        # 3. Re-publish clean baseline dataset
         run_producer()
-        print("Original file restored, temp test nodes cleaned up, and pipeline re-synced.")
+        print("Original file restored, Neo4j DB fully cleaned, and clean baseline re-published.")
 
 
 if __name__ == "__main__":
