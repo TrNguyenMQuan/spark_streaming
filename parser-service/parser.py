@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import Counter
 
 ROOT = Path(__file__).resolve().parent.parent   # repo root
-sys.path.insert(0, str(ROOT))                    # so we can import discover_files (at root)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from kafka_producer import CPGProducer
 from cpg_visitor import parse_source, _now_iso

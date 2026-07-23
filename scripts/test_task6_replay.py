@@ -6,7 +6,7 @@ import time
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "parser-service"))
 from discover_files import discover_files
 
 NEO4J_HTTP = "http://localhost:7474/db/neo4j/tx/commit"

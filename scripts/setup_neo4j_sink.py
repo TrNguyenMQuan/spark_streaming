@@ -135,8 +135,8 @@ def main():
 
     apply_neo4j_constraints()
 
-    nodes_config = root_dir / "neo4j-connectors" / "sink-nodes.json"
-    edges_config = root_dir / "neo4j-connectors" / "sink-edges.json"
+    nodes_config = root_dir / "neo4j" / "connectors" / "sink-nodes.json"
+    edges_config = root_dir / "neo4j" / "connectors" / "sink-edges.json"
 
     register_connector(nodes_config)
     register_connector(edges_config)
