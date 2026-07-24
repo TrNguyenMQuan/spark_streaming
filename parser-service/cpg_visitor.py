@@ -27,7 +27,7 @@ def _now_iso() -> str:
 
 class CPGVisitor(ast.NodeVisitor):
     def __init__(self, file_path: str, repo_commit: str, repo: str | None = None):
-        self.file_path = file_path
+        self.file_path = file_path.replace("\\", "/")
         self.repo_commit = repo_commit
         self.repo = repo
         self.scope_stack: list[str] = []       # name of scope
@@ -298,6 +298,7 @@ def _file_hash(source: str) -> str:
 
 def parse_source(source: str, file_path: str, repo_commit: str = "dev", repo: str | None = None):
     # core: source text -> (nodes, edges, metadata)
+    file_path = file_path.replace("\\", "/")
     tree = ast.parse(source, filename=file_path)
     visitor = CPGVisitor(file_path, repo_commit, repo)
     visitor.analyze(tree)

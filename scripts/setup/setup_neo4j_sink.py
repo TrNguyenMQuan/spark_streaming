@@ -54,16 +54,14 @@ def apply_neo4j_constraints():
     cypher_node_constraint = (
         "CREATE CONSTRAINT unique_cpg_node_id IF NOT EXISTS FOR (n:CPGNode) REQUIRE n.node_id IS UNIQUE"
     )
-    cypher_edge_index = (
-        "CREATE INDEX cpg_edge_id_idx IF NOT EXISTS FOR ()-[r:CPG_EDGE]-() REQUIRE r.edge_id IS DEFINED"
-    )
+    edge_types = ["AST", "CFG", "DFG", "CALL"]
+    statements = [{"statement": cypher_node_constraint}]
+    for et in edge_types:
+        statements.append({
+            "statement": f"CREATE INDEX {et.lower()}_edge_id_idx IF NOT EXISTS FOR ()-[r:{et}]-() ON (r.edge_id)"
+        })
 
-    payload = json.dumps({
-        "statements": [
-            {"statement": cypher_node_constraint},
-            {"statement": cypher_edge_index}
-        ]
-    }).encode("utf-8")
+    payload = json.dumps({"statements": statements}).encode("utf-8")
 
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
     auth_str = base64.b64encode(f"{NEO4J_AUTH[0]}:{NEO4J_AUTH[1]}".encode()).decode()

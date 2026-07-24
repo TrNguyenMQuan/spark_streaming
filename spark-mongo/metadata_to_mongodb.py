@@ -9,7 +9,7 @@ import os
 from typing import Optional
 
 from pyspark.sql import SparkSession, Window
-from pyspark.sql.functions import col, from_json, row_number, to_timestamp
+from pyspark.sql.functions import col, coalesce, from_json, row_number, to_timestamp
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
@@ -100,13 +100,17 @@ metadata_events = (
     .select("event.*", "kafka_key", "kafka_offset")
     # StructType describes the contract, but from_json represents missing fields
     # as null. Validate the v1 constraints explicitly before writing to MongoDB.
-    .withColumn("parsed_event_timestamp", to_timestamp(col("event_timestamp")))
+    .withColumn("parsed_event_timestamp", coalesce(
+        to_timestamp(col("event_timestamp")),
+        to_timestamp(col("event_timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX"),
+        to_timestamp(col("event_timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
+        to_timestamp(col("event_timestamp"), "yyyy-MM-dd'T'HH:mm:ssXXX")
+    ))
     .where(
         (col("schema_version") == "v1")
         & (col("kafka_key") == col("file_path"))
         & col("file_path").isNotNull()
         & col("event_timestamp").isNotNull()
-        & col("parsed_event_timestamp").isNotNull()
         & col("file_hash").rlike("^[0-9a-f]{64}$")
         & (col("language") == "python")
         & col("loc").isNotNull()

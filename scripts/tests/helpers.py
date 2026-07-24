@@ -68,7 +68,7 @@ def run_producer(limit=30):
 def get_db_metrics():
     """Retrieve total count of nodes and edges in Neo4j."""
     res_nodes = query_neo4j("MATCH (n:CPGNode) RETURN count(n) AS c")[0]["row"][0]
-    res_edges = query_neo4j("MATCH ()-[r:CPG_EDGE]->() RETURN count(r) AS c")[0]["row"][0]
+    res_edges = query_neo4j("MATCH ()-[r]->() RETURN count(r) AS c")[0]["row"][0]
     return res_nodes, res_edges
 
 
@@ -102,6 +102,14 @@ def reset_environment(original_code=None, test_file=None, repo_root=None):
 
     try:
         query_neo4j("MATCH (n) DETACH DELETE n")
+    except Exception:
+        pass
+
+    try:
+        import pymongo
+        client = pymongo.MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
+        client["cpg"]["source_metadata"].delete_many({})
+        client.close()
     except Exception:
         pass
 

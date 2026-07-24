@@ -51,7 +51,7 @@ def run(limit=None, producer=None):
     stats = Counter()       # files: ok, errors, nodes, edges
     edge_types = Counter()
     for fp in files:
-        rel = str(fp.relative_to(TARGET))
+        rel = str(fp.relative_to(TARGET)).replace("\\", "/")
         try:
             source = fp.read_text(encoding="utf-8")
             nodes, edges, meta = parse_source(source, rel, repo_commit, REPO_NAME)
@@ -66,7 +66,7 @@ def run(limit=None, producer=None):
         except Exception as exc:                 # 1 bad file must not stop the rest
             err = error_event(rel, exc, repo_commit)
             if producer:
-                producer.publish_error(err)
+                producer.publish_errors(err)
             stats["errors"] += 1
     if producer:
         producer.flush()
