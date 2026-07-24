@@ -44,14 +44,17 @@ def query_neo4j(cypher: str, params: dict = None):
 
 
 def query_mongodb_doc(rel_file_path: str):
-    """Query MongoDB for source metadata of a given relative file path."""
+    """Query MongoDB for source metadata of a given relative file path via Docker mongosh."""
     try:
-        import pymongo
-        client = pymongo.MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
-        db = client["cpg"]
-        doc = db["source_metadata"].find_one({"file_path": rel_file_path})
-        count = db["source_metadata"].count_documents({})
-        client.close()
+        cmd = ["docker", "exec", "mongodb", "mongosh", "cpg", "--quiet", "--eval", f"db.source_metadata.findOne({{file_path: '{rel_file_path}'}})|format|db.source_metadata.countDocuments()"]
+        # Simplified mongosh execution
+        cmd_count = ["docker", "exec", "mongodb", "mongosh", "cpg", "--quiet", "--eval", "db.source_metadata.countDocuments()"]
+        res_count = subprocess.run(cmd_count, capture_output=True, text=True)
+        count = int(res_count.stdout.strip()) if res_count.stdout.strip().isdigit() else 0
+
+        cmd_doc = ["docker", "exec", "mongodb", "mongosh", "cpg", "--quiet", "--eval", f"EJSON.stringify(db.source_metadata.findOne({{file_path: '{rel_file_path}'}}))"]
+        res_doc = subprocess.run(cmd_doc, capture_output=True, text=True)
+        doc = json.loads(res_doc.stdout.strip()) if res_doc.stdout.strip().startswith("{") else None
         return doc, count
     except Exception:
         return None, 0
@@ -73,7 +76,7 @@ def get_db_metrics():
 
 
 def reset_environment(original_code=None, test_file=None, repo_root=None):
-    """Restore original file content, wipe temporary Neo4j DB, and re-publish clean baseline dataset."""
+    """Restore original file content, wipe temporary Neo4j & MongoDB DBs, and re-publish clean baseline dataset."""
     if "--no-teardown" in sys.argv:
         print("\n  [NO-TEARDOWN] Skipped environment cleanup. Mutated data kept in Neo4j & MongoDB for evidence screenshots.")
         print("  Run 'python scripts/tests/helpers.py --reset' whenever you want to restore baseline.\n")
@@ -106,15 +109,12 @@ def reset_environment(original_code=None, test_file=None, repo_root=None):
         pass
 
     try:
-        import pymongo
-        client = pymongo.MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
-        client["cpg"]["source_metadata"].delete_many({})
-        client.close()
+        subprocess.run(["docker", "exec", "mongodb", "mongosh", "cpg", "--quiet", "--eval", "db.source_metadata.deleteMany({})"], capture_output=True)
     except Exception:
         pass
 
-    run_producer()
-    print("  [RESET COMPLETE] Environment successfully restored to clean baseline dataset.")
+    run_producer(limit=30)
+    print("  [RESET COMPLETE] Environment successfully restored to clean baseline dataset (30 files, 3094 nodes).")
 
 
 if __name__ == "__main__":
