@@ -1,9 +1,13 @@
-"""Testcase 5: Add Function Invocation ('tc1_new_function()') inside caller function
+"""Testcase 5: Add Function Invocation (Call Graph Edge Creation)
 
-Verifies that adding a function invocation creates both caller node and CALL relationship edge in Neo4j.
+Verifies that calling a function inside another function creates a caller node
+and a CALL edge in Neo4j connecting the two functions.
 """
 
-from helpers import get_test_file, run_producer, get_db_metrics, query_neo4j, query_mongodb_doc, reset_environment
+try:
+    from helpers import get_test_file, run_producer, get_db_metrics, query_neo4j, query_mongodb_doc, reset_environment
+except ModuleNotFoundError:
+    from scripts.tests.helpers import get_test_file, run_producer, get_db_metrics, query_neo4j, query_mongodb_doc, reset_environment
 
 
 def run_testcase_5():
@@ -19,14 +23,14 @@ def run_testcase_5():
         run_producer()
         nodes_tc5, edges_tc5 = get_db_metrics()
 
-        check_caller = query_neo4j("MATCH (n:CPGNode {name: 'tc5_caller_function'}) RETURN n.name")[0]["row"]
+        check_caller = query_neo4j("MATCH (n:CPGNode {name: 'tc5_caller_function'}) RETURN n.name, n.node_type")[0]["row"]
         mongo_doc5, _ = query_mongodb_doc(rel_path)
-        passed = (check_caller[0] == 'tc5_caller_function')
+        passed = (nodes_tc5 >= nodes_base + 2) and (check_caller[0] == 'tc5_caller_function')
 
         print(f"  Result -> Neo4j Nodes: {nodes_tc5}, Edges: {edges_tc5}")
         print(f"  Caller Function Node Created: {check_caller[0]}")
         if mongo_doc5:
-            print(f"  MongoDB Final Document Metadata -> File: {rel_path}, Nodes: {mongo_doc5.get('num_nodes')}, Edges: {mongo_doc5.get('num_edges')}")
+            print(f"  MongoDB Final Document Metadata -> File: {mongo_doc5.get('file_path')}, Nodes: {mongo_doc5.get('num_nodes')}, Edges: {mongo_doc5.get('num_edges')}")
         print(f"  TESTCASE 5: {'PASSED [SUCCESS]' if passed else 'FAILED [ERROR]'}")
         return passed
 

@@ -1,10 +1,13 @@
-"""Testcase 3: Shift Line Numbers (Prepend Comments to test Stable ID Hash Resilience)
+"""Testcase 3: Prepend Comment Lines (Line Shift Resilience)
 
-Verifies that prepending 10 comment lines shifts line_start/line_end attributes
-in Neo4j & MongoDB via MERGE/Upsert without creating duplicate nodes (0% duplicates).
+Verifies that adding comment lines shifts line numbers without producing duplicate AST nodes
+in Neo4j because Stable ID SHA-256 hash is line-number independent.
 """
 
-from helpers import get_test_file, run_producer, get_db_metrics, query_mongodb_doc, reset_environment
+try:
+    from helpers import get_test_file, run_producer, get_db_metrics, query_mongodb_doc, reset_environment
+except ModuleNotFoundError:
+    from scripts.tests.helpers import get_test_file, run_producer, get_db_metrics, query_mongodb_doc, reset_environment
 
 
 def run_testcase_3():

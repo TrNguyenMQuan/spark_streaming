@@ -4,7 +4,10 @@ Verifies that adding a new function creates a new FunctionDef node in Neo4j
 and updates the corresponding metadata document in MongoDB without duplicating existing nodes.
 """
 
-from helpers import get_test_file, run_producer, get_db_metrics, query_neo4j, query_mongodb_doc, reset_environment
+try:
+    from helpers import get_test_file, run_producer, get_db_metrics, query_neo4j, query_mongodb_doc, reset_environment
+except ModuleNotFoundError:
+    from scripts.tests.helpers import get_test_file, run_producer, get_db_metrics, query_neo4j, query_mongodb_doc, reset_environment
 
 
 def run_testcase_1():

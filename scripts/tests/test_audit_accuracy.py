@@ -8,7 +8,10 @@ import ast
 import sys
 from pathlib import Path
 
-from helpers import query_neo4j, PROJECT_ROOT
+try:
+    from helpers import query_neo4j, PROJECT_ROOT
+except ModuleNotFoundError:
+    from scripts.tests.helpers import query_neo4j, PROJECT_ROOT
 
 
 def get_ast_ground_truth(file_path: Path):
