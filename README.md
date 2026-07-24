@@ -11,30 +11,30 @@ The diagram below describes the complete multi-stage streaming pipeline architec
 
 ```mermaid
 flowchart TD
-    subgraph Task1 ["1. Data Source & File Discovery (Task 1)"]
-        Repo["GitHub Python Repository<br><code>target-repo/</code>"]
-        Discover["File Discovery Engine<br><code>parser-service/discover_files.py</code>"]
+    subgraph Task1 ["1. Data Source and File Discovery - Task 1"]
+        Repo["GitHub Python Repository - target-repo"]
+        Discover["File Discovery Engine - parser-service/discover_files.py"]
         Repo -->|Enumerate .py files| Discover
     end
 
-    subgraph Task2 ["2. Incremental CPG Parser Service (Task 2)"]
-        AST_Visitor["AST NodeVisitor Engine<br><code>parser-service/cpg_visitor.py</code>"]
-        Hasher["SHA-256 Scope Hasher<br><code>parser-service/stable_id.py</code><br><i>(Line-number Independent)</i>"]
-        Schemas["JSON Schemas v1 Envelope<br><code>parser-service/schemas/</code>"]
+    subgraph Task2 ["2. Incremental CPG Parser Service - Task 2"]
+        AST_Visitor["AST NodeVisitor Engine - parser-service/cpg_visitor.py"]
+        Hasher["SHA-256 Scope Hasher - parser-service/stable_id.py"]
+        Schemas["JSON Schemas v1 Envelope - parser-service/schemas"]
         
         Discover -->|Stream one file at a time| AST_Visitor
         AST_Visitor -->|Extract AST, CFG, DFG, CALL| Hasher
-        Hasher -->|Assign Stable Node/Edge IDs| Schemas
+        Hasher -->|Assign Stable Node and Edge IDs| Schemas
     end
 
-    subgraph Task3 ["3. Kafka Event Streaming Backbone (Task 3)"]
-        Producer["Kafka Producer Service<br><code>parser-service/kafka_producer.py</code><br><code>acks='all'</code>, <code>linger_ms=50</code>"]
+    subgraph Task3 ["3. Kafka Event Streaming Backbone - Task 3"]
+        Producer["Kafka Producer Service - parser-service/kafka_producer.py"]
         
-        subgraph Topics ["Kafka KRaft Broker (localhost:9092)"]
-            T_Nodes["<code>code.events.nodes</code><br>(3 Partitions, Key=file_path)"]
-            T_Edges["<code>code.events.edges</code><br>(3 Partitions, Key=file_path)"]
-            T_Meta["<code>code.events.metadata</code><br>(1 Partition, Key=file_path)"]
-            T_Err["<code>code.events.errors</code><br>(1 Partition, Key=file_path)"]
+        subgraph Topics ["Kafka KRaft Broker - localhost:9092"]
+            T_Nodes["code.events.nodes - 3 Partitions, Key=file_path"]
+            T_Edges["code.events.edges - 3 Partitions, Key=file_path"]
+            T_Meta["code.events.metadata - 1 Partition, Key=file_path"]
+            T_Err["code.events.errors - 1 Partition, Key=file_path"]
         end
 
         Schemas -->|Batch payload| Producer
@@ -44,33 +44,33 @@ flowchart TD
         Producer --> T_Err
     end
 
-    subgraph Task4 ["4. Direct Graph Ingestion into Neo4j (Task 4)"]
-        KC_Nodes["Kafka Connect Sink Worker<br><code>sink-nodes.json</code> (tasks.max=3)"]
-        KC_Edges["Kafka Connect Sink Worker<br><code>sink-edges.json</code> (tasks.max=3)"]
-        Neo4j[("Neo4j Graph Database<br>(APOC + Cypher MERGE)<br><code>:CPGNode</code>, <code>:CPG_EDGE</code>")]
-        DLQ["Dead Letter Queue Topic<br><code>code.events.dlq</code>"]
+    subgraph Task4 ["4. Direct Graph Ingestion into Neo4j - Task 4"]
+        KC_Nodes["Kafka Connect Sink Worker - sink-nodes.json"]
+        KC_Edges["Kafka Connect Sink Worker - sink-edges.json"]
+        Neo4j["Neo4j Graph Database - APOC Cypher MERGE"]
+        DLQ["Dead Letter Queue Topic - code.events.dlq"]
 
         T_Nodes --> KC_Nodes
         T_Edges --> KC_Edges
-        KC_Nodes -->|Cypher MERGE (Idempotent)| Neo4j
-        KC_Edges -->|Cypher MERGE (Idempotent)| Neo4j
+        KC_Nodes -->|Cypher MERGE| Neo4j
+        KC_Edges -->|Cypher MERGE| Neo4j
         KC_Nodes -.->|Error payload| DLQ
         KC_Edges -.->|Error payload| DLQ
     end
 
-    subgraph Task5 ["5. Source Metadata Streaming into MongoDB (Task 5)"]
-        Spark["Spark Structured Streaming Job<br><code>spark-mongo/metadata_to_mongodb.py</code>"]
-        Checkpoint["Persistent Checkpoint Location<br><code>/opt/spark-checkpoints</code>"]
-        Mongo[("MongoDB Collection<br><code>cpg.source_metadata</code><br>Replace + Upsert")]
+    subgraph Task5 ["5. Source Metadata Streaming into MongoDB - Task 5"]
+        Spark["Spark Structured Streaming Job - spark-mongo/metadata_to_mongodb.py"]
+        Checkpoint["Persistent Checkpoint Location - /opt/spark-checkpoints"]
+        Mongo["MongoDB Collection - cpg.source_metadata"]
 
         T_Meta --> Spark
         Spark <--->|Offset tracking| Checkpoint
         Spark -->|MongoDB Spark Connector| Mongo
     end
 
-    subgraph Task6 ["6. Idempotent Replay Verification Suite (Task 6)"]
-        Mutator["Modular Mutation Test Suite<br><code>scripts/tests/</code> (TC1 - TC5)"]
-        Audit["100% Ground-Truth AST Audit<br><code>scripts/tests/test_audit_accuracy.py</code>"]
+    subgraph Task6 ["6. Idempotent Replay Verification Suite - Task 6"]
+        Mutator["Modular Mutation Test Suite - scripts/tests/ TC1-TC5"]
+        Audit["100% Ground-Truth AST Audit - test_audit_accuracy.py"]
 
         Mutator -->|Stream Replay| Producer
         Audit -->|1-to-1 Cross-check| Neo4j
