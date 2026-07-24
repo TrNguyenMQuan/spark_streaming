@@ -4,8 +4,8 @@ project:
   toc:
     - file: intro.md
     - file: 01_file_discovery.ipynb
-    - file: 02_cpg_parser.ipynb
-    - file: 03_kafka_producer.ipynb
+    - file: 02_parser_service.ipynb
+    - file: 03_kafka_topic_design.ipynb
     - file: 04_neo4j_ingestion.ipynb
     - file: 05_mongodb_ingestion.ipynb
     - file: 06_replay_verification.ipynb
