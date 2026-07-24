@@ -72,13 +72,33 @@ def get_db_metrics():
     return res_nodes, res_edges
 
 
-def reset_environment(original_code, test_file, repo_root):
+def reset_environment(original_code=None, test_file=None, repo_root=None):
     """Restore original file content, wipe temporary Neo4j DB, and re-publish clean baseline dataset."""
-    test_file.write_text(original_code, encoding="utf-8")
-    try:
-        subprocess.run(["git", "-C", str(repo_root), "checkout", str(test_file.name)], capture_output=True)
-    except Exception:
-        pass
+    if "--no-teardown" in sys.argv:
+        print("\n  [NO-TEARDOWN] Skipped environment cleanup. Mutated data kept in Neo4j & MongoDB for evidence screenshots.")
+        print("  Run 'python scripts/tests/helpers.py --reset' whenever you want to restore baseline.\n")
+        return
+
+    if "--pause" in sys.argv:
+        print("\n==========================================================================")
+        print("  [PAUSE FOR SCREENSHOT EVIDENCE]")
+        print("  Mutated testcase data is currently LIVE in Neo4j (http://localhost:7474) & MongoDB (http://localhost:8081)!")
+        print("  --> Take your UI evidence screenshots now.")
+        print("  --> Press [ENTER] key in this terminal when finished to restore baseline environment...")
+        print("==========================================================================")
+        try:
+            input()
+        except KeyboardInterrupt:
+            pass
+
+    if test_file and original_code:
+        test_file.write_text(original_code, encoding="utf-8")
+
+    if repo_root:
+        try:
+            subprocess.run(["git", "-C", str(repo_root), "checkout", "."], capture_output=True)
+        except Exception:
+            pass
 
     try:
         query_neo4j("MATCH (n) DETACH DELETE n")
@@ -86,3 +106,11 @@ def reset_environment(original_code, test_file, repo_root):
         pass
 
     run_producer()
+    print("  [RESET COMPLETE] Environment successfully restored to clean baseline dataset.")
+
+
+if __name__ == "__main__":
+    if "--reset" in sys.argv:
+        print("Restoring baseline environment...")
+        test_file, rel_path, repo_root = get_test_file()
+        reset_environment(repo_root=repo_root)
