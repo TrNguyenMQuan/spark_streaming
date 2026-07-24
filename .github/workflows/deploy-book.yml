@@ -5,8 +5,7 @@ on:
     branches:
       - main
       - feature/verification
-    paths:
-      - 'notebooks/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,24 +23,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
+          node-version: '20'
 
-      - name: Install MyST and Jupyter Book dependencies
-        run: |
-          pip install mystmd
+      - name: Install MyST Markdown CLI
+        run: npm install -g mystmd
 
-      - name: Build Jupyter Book with MyST
+      - name: Build Jupyter Book HTML Site
         working-directory: notebooks
-        run: |
-          myst build --html
+        run: myst build --html
 
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: notebooks/_build/html
+          path: notebooks/_build/site
 
   deploy:
     environment:
