@@ -7,7 +7,7 @@ project:
     - file: 02_cpg_parser.ipynb
     - file: 03_kafka_producer.ipynb
     - file: 04_neo4j_ingestion.ipynb
-    - file: 05_metadata_ingestion_mongodb.ipynb
+    - file: 05_mongodb_ingestion.ipynb
     - file: 06_replay_verification.ipynb
 site:
   title: "Lab 04 — CPG Streaming Pipeline"
