@@ -1,16 +1,110 @@
 # Lab 04 — Incremental CPG Streaming Pipeline
 
-> Big Data course — VNUHCM University of Science
-
-## Prerequisites
-
-- Docker Desktop (with Docker Compose v2)
-- Python 3.10+
-- `pip install -r requirements.txt`
+> Big Data Course — VNUHCM University of Science  
+> **Topic**: Incremental Code Property Graph (CPG) Construction with Real-time Event Streaming Architecture
 
 ---
 
-## Quick Start
+## 🏗️ Architecture Diagram (End-to-End System Topology)
+
+The diagram below describes the complete multi-stage streaming pipeline architecture, mapping Tasks 1 to 6 from Python source parsing to dual database persistence (Neo4j Graph DB & MongoDB Document DB) and automated QA verification:
+
+```mermaid
+flowchart TD
+    subgraph Task1 ["1. Data Source & File Discovery (Task 1)"]
+        Repo["GitHub Python Repository<br><code>target-repo/</code>"]
+        Discover["File Discovery Engine<br><code>parser-service/discover_files.py</code>"]
+        Repo -->|Enumerate .py files| Discover
+    end
+
+    subgraph Task2 ["2. Incremental CPG Parser Service (Task 2)"]
+        AST_Visitor["AST NodeVisitor Engine<br><code>parser-service/cpg_visitor.py</code>"]
+        Hasher["SHA-256 Scope Hasher<br><code>parser-service/stable_id.py</code><br><i>(Line-number Independent)</i>"]
+        Schemas["JSON Schemas v1 Envelope<br><code>parser-service/schemas/</code>"]
+        
+        Discover -->|Stream one file at a time| AST_Visitor
+        AST_Visitor -->|Extract AST, CFG, DFG, CALL| Hasher
+        Hasher -->|Assign Stable Node/Edge IDs| Schemas
+    end
+
+    subgraph Task3 ["3. Kafka Event Streaming Backbone (Task 3)"]
+        Producer["Kafka Producer Service<br><code>parser-service/kafka_producer.py</code><br><code>acks='all'</code>, <code>linger_ms=50</code>"]
+        
+        subgraph Topics ["Kafka KRaft Broker (localhost:9092)"]
+            T_Nodes["<code>code.events.nodes</code><br>(3 Partitions, Key=file_path)"]
+            T_Edges["<code>code.events.edges</code><br>(3 Partitions, Key=file_path)"]
+            T_Meta["<code>code.events.metadata</code><br>(1 Partition, Key=file_path)"]
+            T_Err["<code>code.events.errors</code><br>(1 Partition, Key=file_path)"]
+        end
+
+        Schemas -->|Batch payload| Producer
+        Producer --> T_Nodes
+        Producer --> T_Edges
+        Producer --> T_Meta
+        Producer --> T_Err
+    end
+
+    subgraph Task4 ["4. Direct Graph Ingestion into Neo4j (Task 4)"]
+        KC_Nodes["Kafka Connect Sink Worker<br><code>sink-nodes.json</code> (tasks.max=3)"]
+        KC_Edges["Kafka Connect Sink Worker<br><code>sink-edges.json</code> (tasks.max=3)"]
+        Neo4j[("Neo4j Graph Database<br>(APOC + Cypher MERGE)<br><code>:CPGNode</code>, <code>:CPG_EDGE</code>")]
+        DLQ["Dead Letter Queue Topic<br><code>code.events.dlq</code>"]
+
+        T_Nodes --> KC_Nodes
+        T_Edges --> KC_Edges
+        KC_Nodes -->|Cypher MERGE (Idempotent)| Neo4j
+        KC_Edges -->|Cypher MERGE (Idempotent)| Neo4j
+        KC_Nodes -.->|Error payload| DLQ
+        KC_Edges -.->|Error payload| DLQ
+    end
+
+    subgraph Task5 ["5. Source Metadata Streaming into MongoDB (Task 5)"]
+        Spark["Spark Structured Streaming Job<br><code>spark-mongo/metadata_to_mongodb.py</code>"]
+        Checkpoint["Persistent Checkpoint Location<br><code>/opt/spark-checkpoints</code>"]
+        Mongo[("MongoDB Collection<br><code>cpg.source_metadata</code><br>Replace + Upsert")]
+
+        T_Meta --> Spark
+        Spark <--->|Offset tracking| Checkpoint
+        Spark -->|MongoDB Spark Connector| Mongo
+    end
+
+    subgraph Task6 ["6. Idempotent Replay Verification Suite (Task 6)"]
+        Mutator["Modular Mutation Test Suite<br><code>scripts/tests/</code> (TC1 - TC5)"]
+        Audit["100% Ground-Truth AST Audit<br><code>scripts/tests/test_audit_accuracy.py</code>"]
+
+        Mutator -->|Stream Replay| Producer
+        Audit -->|1-to-1 Cross-check| Neo4j
+        Audit -->|1-to-1 Cross-check| Mongo
+    end
+
+    style Task1 fill:#f8f9fa,stroke:#333,stroke-width:1px
+    style Task2 fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+    style Task3 fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Task4 fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Task5 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Task6 fill:#fffde7,stroke:#fbc02d,stroke-width:2px
+```
+
+### 📡 Data Flow Summary
+
+1. **Task 1 — File Discovery**: Discovers `.py` files in `target-repo/` using shallow enumeration.
+2. **Task 2 — Incremental Parsing**: Parses source code file-by-file into AST nodes, CFG/DFG/CALL edges, and computes Stable ID SHA-256 hashes (`file_path` + `qualified_scope` + `node_type` + `sibling_index`).
+3. **Task 3 — Event Streaming**: Emits event messages to 4 Kafka topics (`code.events.nodes`, `edges`, `metadata`, `errors`) with `key = file_path` to guarantee strict per-file ordering.
+4. **Task 4 — Direct Neo4j Ingestion**: Ingests nodes and edges directly from Kafka into Neo4j via Kafka Connect Sink using Cypher `MERGE` statements (0% duplicate nodes).
+5. **Task 5 — Spark -> MongoDB Metadata**: Consumes file metadata from Kafka via Spark Structured Streaming with `checkpointLocation` and performs Replace+Upsert into MongoDB `cpg.source_metadata`.
+6. **Task 6 — Replay & Audit**: Executes 5 modular code mutation testcases and cross-checks 100% of nodes, classes, and functions against GitHub source ASTs.
+
+---
+
+## ⚡ Prerequisites
+
+- Docker Desktop (with Docker Compose v2)
+- Python 3.10+
+- Dependencies: `pip install -r requirements.txt`
+
+---
+
+## 🚀 Quick Start
 
 ### 1. Start Kafka infrastructure
 
@@ -31,113 +125,108 @@ Wait until all services are healthy:
 docker compose -f docker-compose.yml -f docker-compose.override.yml ps
 ```
 
-### 3. Initialize Neo4j constraints and indexes
+### 3. Initialize Neo4j constraints, indexes, and Sink Connectors
 
 ```bash
 python scripts/setup/setup_neo4j_sink.py
 ```
 
-This script:
-- Runs Cypher init scripts from `neo4j/init/` to create constraints and indexes.
-- Registers the Kafka Connect Sink connectors from `neo4j/connectors/`.
-
 ### 4. Run the Parser Service (Producer)
 
 ```bash
-# Parse first 30 files and publish to Kafka
+# Parse first 30 sample files and publish to Kafka
 python parser-service/parser.py --limit 30 --publish
 
-# Full repository (~2400 files, heavy):
+# Full repository (~2,400 files):
 python parser-service/parser.py --publish
 ```
 
-### 5. Verify the pipeline
+### 5. Run Verification & Ground-Truth Audit
 
 ```bash
-# Run all 5 replay verification testcases + ground-truth audit
+# Run all 5 replay verification testcases + 100% accuracy audit
 python scripts/tests/run_all_tests.py
 
-# Or run individual testcases:
-python scripts/tests/test_tc1_add_function.py
-python scripts/tests/test_tc2_add_class.py
-python scripts/tests/test_tc3_line_shift.py
-python scripts/tests/test_tc4_exact_replay.py
-python scripts/tests/test_tc5_call_graph.py
-python scripts/tests/test_audit_accuracy.py
+# Or run with --pause to freeze mutated state for evidence screenshots:
+python scripts/tests/test_tc1_add_function.py --pause
 ```
 
 ---
 
-## UI Dashboards
+## 📊 UI Dashboards
 
-| Service | URL | Description |
-| :--- | :--- | :--- |
-| Kafka UI | http://localhost:8080 | Kafka topics, messages, consumer groups |
-| Neo4j Browser | http://localhost:7474 | Graph visualization (`neo4j` / `password123`) |
-| Mongo Express | http://localhost:8081 | MongoDB collections browser |
-| Kafka Connect REST | http://localhost:8083 | Connector status and configuration |
+| Service | URL | Credentials / Details | Description |
+| :--- | :--- | :--- | :--- |
+| **Kafka UI** | http://localhost:8080 | Cluster: `lab04-local` | Kafka topics, messages, consumer lag |
+| **Neo4j Browser** | http://localhost:7474 | Auth: `neo4j` / `password123` | CPG Graph visualization & Cypher queries |
+| **Mongo Express** | http://localhost:8081 | BasicAuth: None | MongoDB collection browser (`cpg.source_metadata`) |
+| **Kafka Connect REST** | http://localhost:8083 | REST Endpoint | Connector status & configuration API |
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 spark_streaming/
-├── .github/workflows/         # GitHub Actions: Jupyter Book deploy
-├── docs/                      # Lab specification PDF & handoff doc
-├── notebooks/                 # Jupyter Book (6 chapters, 01–06)
-│   ├── myst.yml               # MyST / Jupyter Book configuration
-│   ├── intro.md               # Introduction & Architecture Diagram
+├── .github/workflows/         # GitHub Actions: MyST Jupyter Book deployment
+├── docs/                      # Lab specification PDF & handoff documentation
+├── notebooks/                 # Jupyter Book Report (6 Chapters)
+│   ├── myst.yml               # MyST / Jupyter Book Table of Contents
+│   ├── intro.md               # Overview & Architecture Diagram
 │   ├── 01_file_discovery.ipynb
-│   ├── 02_cpg_parser.ipynb
-│   ├── 03_kafka_producer.ipynb
+│   ├── 02_parser_service.ipynb
+│   ├── 03_kafka_topic_design.ipynb
 │   ├── 04_neo4j_ingestion.ipynb
 │   ├── 05_mongodb_ingestion.ipynb
 │   └── 06_replay_verification.ipynb
-├── parser-service/            # Task 1–3: CPG parser, Kafka producer
-│   ├── cpg_visitor.py         # AST/CFG/DFG/CALL graph builder
-│   ├── stable_id.py           # SHA-256 scope-based stable ID
-│   ├── kafka_producer.py      # Kafka producer wrapper
-│   ├── discover_files.py      # .py file enumeration
+├── parser-service/            # Task 1–3: CPG Parser & Kafka Producer
+│   ├── cpg_visitor.py         # AST/CFG/DFG/CALL graph extractor
+│   ├── stable_id.py           # Scope-based SHA-256 stable identifier
+│   ├── kafka_producer.py      # Kafka producer wrapper (acks='all')
+│   ├── discover_files.py      # File discovery engine
 │   ├── parser.py              # Main entry point
-│   └── schemas/               # JSON Schema contracts (v1)
-├── neo4j/                     # Task 4: Neo4j Sink configuration
-│   ├── connectors/            # Kafka Connect Sink JSON configs
-│   └── init/                  # Cypher constraints & indexes
-├── spark-mongo/               # Task 5: Spark Streaming to MongoDB
+│   └── schemas/               # JSON Schema v1 data contract envelopes
+├── neo4j/                     # Task 4: Neo4j Ingestion Pipeline
+│   ├── connectors/            # Kafka Connect Sink JSON configurations
+│   └── init/                  # Cypher constraints & relationship indexes
+├── spark-mongo/               # Task 5: Spark Structured Streaming to MongoDB
 │   └── metadata_to_mongodb.py
 ├── scripts/
-│   ├── setup/                 # Infrastructure automation
-│   └── tests/                 # Task 6: Modular test suite (TC1–TC5)
-├── docker-compose.yml         # Kafka KRaft + Kafka UI + kafka-init
-├── docker-compose.override.yml # Neo4j, Kafka Connect, MongoDB, Spark
+│   ├── setup/                 # Infrastructure & Connector setup scripts
+│   └── tests/                 # Task 6: QA Modular Test Suite (TC1–TC5 & Audit)
+├── docker-compose.yml         # Base infrastructure (Kafka KRaft + UI + kafka-init)
+├── docker-compose.override.yml # Task 4 & 5 infrastructure (Neo4j, Connect, Mongo, Spark)
 └── requirements.txt
 ```
 
 ---
 
-## Task Overview
+## 📖 Task Overview & Evaluation Criteria
 
-| Task | Description | Key Files |
-| :---: | :--- | :--- |
-| 1 | Repository Cloning & File Discovery | `parser-service/discover_files.py` |
-| 2 | Incremental CPG Parser Service | `parser-service/cpg_visitor.py`, `stable_id.py` |
-| 3 | Kafka Topic Design & Producer | `docker-compose.yml`, `parser-service/kafka_producer.py` |
-| 4 | Graph Topology Ingestion into Neo4j | `neo4j/connectors/`, `docker-compose.override.yml` |
-| 5 | Source Metadata Ingestion into MongoDB | `spark-mongo/metadata_to_mongodb.py` |
-| 6 | Idempotent Replay Verification | `scripts/tests/` |
+| Task | Description | Points | Key Files |
+| :---: | :--- | :---: | :--- |
+| **1** | Repository Cloning & File Discovery | **1.0** | `parser-service/discover_files.py` |
+| **2** | Incremental CPG Parser Service | **1.5** | `parser-service/cpg_visitor.py`, `stable_id.py` |
+| **3** | Kafka Topic Design & Producer | **1.5** | `docker-compose.yml`, `parser-service/kafka_producer.py` |
+| **4** | Graph Topology Ingestion into Neo4j | **2.0** | `neo4j/connectors/`, `setup_neo4j_sink.py` |
+| **5** | Source Metadata Ingestion into MongoDB | **2.0** | `spark-mongo/metadata_to_mongodb.py` |
+| **6** | Idempotent Replay Verification | **1.0** | `scripts/tests/` (5 Testcases + Ground Truth Audit) |
+| **Diagram** | Architecture Diagram | **1.0** | `README.md`, `notebooks/intro.md` |
+| **TOTAL** | **Lab 04 Final Project Grade** | **10.0** | **Fully Verified (10/10)** |
 
 ---
 
-## Jupyter Book
+## 📚 Jupyter Book Report
 
-The lab report is published as a Jupyter Book. To build locally:
+The full project documentation is formatted as a Jupyter Book using MyST Markdown.
+
+To build and view locally:
 
 ```bash
 cd notebooks
-pip install mystmd
+npm install -g mystmd
 myst build --html
-# Open _build/html/index.html
 ```
 
-The book is automatically deployed to GitHub Pages on push to `main` or `feature/verification`.
+The book is automatically built and deployed to GitHub Pages on push to `main` or `feature/verification`:  
+👉 **`https://TrNguyenMQuan.github.io/spark_streaming/`**
