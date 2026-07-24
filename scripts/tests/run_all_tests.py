@@ -11,11 +11,11 @@ from pathlib import Path
 TESTS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TESTS_DIR))
 
-from test_tc1_add_function import run_testcase_1
-from test_tc2_add_class import run_testcase_2
-from test_tc3_line_shift import run_testcase_3
-from test_tc4_exact_replay import run_testcase_4
-from test_tc5_call_graph import run_testcase_5
+from testcase1_add_function import run_testcase_1
+from testcase2_add_class import run_testcase_2
+from testcase3_line_shift import run_testcase_3
+from testcase4_exact_replay import run_testcase_4
+from testcase5_call_graph import run_testcase_5
 from test_audit_accuracy import run_audit_accuracy
 
 
