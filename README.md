@@ -5,7 +5,7 @@
 
 ---
 
-## 🏗️ Architecture Diagram (End-to-End System Topology)
+## Architecture Diagram (End-to-End System Topology)
 
 The diagram below describes the complete multi-stage streaming pipeline architecture, mapping Tasks 1 to 6 from Python source parsing to dual database persistence (Neo4j Graph DB & MongoDB Document DB) and automated QA verification:
 
@@ -85,7 +85,7 @@ flowchart TD
     style Task6 fill:#fffde7,stroke:#fbc02d,stroke-width:2px
 ```
 
-### 📡 Data Flow Summary
+### Data Flow Summary
 
 1. **Task 1 — File Discovery**: Discovers `.py` files in `target-repo/` using shallow enumeration.
 2. **Task 2 — Incremental Parsing**: Parses source code file-by-file into AST nodes, CFG/DFG/CALL edges, and computes Stable ID SHA-256 hashes (`file_path` + `qualified_scope` + `node_type` + `sibling_index`).
@@ -96,7 +96,7 @@ flowchart TD
 
 ---
 
-## ⚡ Prerequisites
+## Prerequisites
 
 - Docker Desktop (with Docker Compose v2)
 - Python 3.10+
@@ -104,7 +104,7 @@ flowchart TD
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Start Kafka infrastructure
 
@@ -153,7 +153,7 @@ python scripts/tests/testcase1_add_function.py --pause
 
 ---
 
-## 📊 UI Dashboards
+## UI Dashboards
 
 | Service | URL | Credentials / Details | Description |
 | :--- | :--- | :--- | :--- |
@@ -164,7 +164,7 @@ python scripts/tests/testcase1_add_function.py --pause
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 spark_streaming/
@@ -201,7 +201,7 @@ spark_streaming/
 
 ---
 
-## 📖 Task Overview & Evaluation Criteria
+## Task Overview & Evaluation Criteria
 
 | Task | Description | Points | Key Files |
 | :---: | :--- | :---: | :--- |
@@ -216,7 +216,7 @@ spark_streaming/
 
 ---
 
-## 📚 Jupyter Book Report
+## Jupyter Book Report
 
 The full project documentation is formatted as a Jupyter Book using MyST Markdown.
 
@@ -229,4 +229,4 @@ myst build --html
 ```
 
 The book is automatically built and deployed to GitHub Pages on push to `main` or `feature/verification`:  
-👉 **`https://TrNguyenMQuan.github.io/spark_streaming/`**
+**`https://TrNguyenMQuan.github.io/spark_streaming/`**
