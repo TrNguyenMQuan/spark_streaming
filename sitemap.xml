@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="http://localhost:3000/sitemap_style.xsl" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://localhost:3000</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/file-discovery</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/parser-service</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/kafka-topic-design</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/neo4j-ingestion</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/mongodb-ingestion</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/replay-verification</loc>
+  </url>
+</urlset>
