@@ -4,7 +4,7 @@ This component implements **Tasks 1, 2, and 3** of the Incremental Code Property
 
 ---
 
-## 🏗️ Architecture & Component Overview
+## Architecture & Component Overview
 
 ```mermaid
 flowchart LR
@@ -27,7 +27,7 @@ flowchart LR
 
 ---
 
-## 🚀 Usage & CLI Commands
+## Usage & CLI Commands
 
 Run all commands from the project root directory:
 
@@ -44,7 +44,7 @@ python parser-service/parser.py --file target-repo/src/transformers/models/auto/
 
 ---
 
-## 📊 Kafka Topic Routing & Payload Layout
+## Kafka Topic Routing & Payload Layout
 
 Events are partitioned into 4 distinct Kafka topics based on payload classification:
 

@@ -4,7 +4,7 @@ This component implements **Task 5** of the Incremental CPG Streaming Pipeline. 
 
 ---
 
-## 🏗️ Architecture & Component Overview
+## Architecture & Component Overview
 
 ```mermaid
 flowchart LR
@@ -21,14 +21,14 @@ flowchart LR
 
 ---
 
-## 🔄 Replace + Upsert & Restart Resilience
+## Replace + Upsert & Restart Resilience
 
 1. **Replace Strategy**: Uses `operationType = "replace"` with stable primary key `idFieldList = ["file_path"]`. When a file is modified and re-published, Spark replaces the existing MongoDB document by matching `file_path` instead of appending duplicates.
 2. **Persistent Checkpoints**: Configured with `checkpointLocation = "/opt/spark-checkpoints"`. If the Spark container restarts or crashes, Spark resumes processing strictly from the last committed Kafka offsets, skipping already processed messages.
 
 ---
 
-## 🚀 Execution & Verification Commands
+## Execution & Verification Commands
 
 ```bash
 # Execute PySpark streaming job locally (or inside Spark container)

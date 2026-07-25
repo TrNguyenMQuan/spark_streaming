@@ -4,7 +4,7 @@ This component implements **Task 6** and pipeline QA automation. It provides a m
 
 ---
 
-## 🏗️ Test Suite Overview & Architecture
+## Test Suite Overview & Architecture
 
 ```mermaid
 flowchart TD
@@ -21,7 +21,7 @@ flowchart TD
 
 ---
 
-## 🧪 5 Modular Code Mutation Testcases
+## 5 Modular Code Mutation Testcases
 
 | Testcase Script | Code Mutation Scenario | Neo4j Assertion | MongoDB Assertion |
 |---|---|---|---|
@@ -33,7 +33,7 @@ flowchart TD
 
 ---
 
-## 🛠️ Ground-Truth Accuracy Audit
+## Ground-Truth Accuracy Audit
 
 `test_audit_accuracy.py` verifies 1-to-1 fidelity between GitHub source code and database state:
 - Asserts every parsed Python file has a matching document in MongoDB.
@@ -41,7 +41,7 @@ flowchart TD
 
 ---
 
-## 🚀 Execution & CLI Commands
+## Execution & CLI Commands
 
 Run commands from the project root:
 

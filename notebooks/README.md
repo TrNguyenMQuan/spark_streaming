@@ -4,7 +4,7 @@ This directory contains the 6 interactive Jupyter Notebooks (`01_file_discovery.
 
 ---
 
-## 📚 Notebook Chapters Overview
+## Notebook Chapters Overview
 
 | File Name | Task Title | Content Summary |
 |---|---|---|
@@ -18,7 +18,7 @@ This directory contains the 6 interactive Jupyter Notebooks (`01_file_discovery.
 
 ---
 
-## 🛠️ Building & Viewing Jupyter Book Locally
+## Building & Viewing Jupyter Book Locally
 
 You can compile the notebooks into an interactive HTML documentation website using MyST or Jupyter Book:
 
