@@ -18,15 +18,15 @@ def ensure_plugin_downloaded(root_dir: Path):
     plugins_dir = root_dir / "plugins"
     plugin_path = plugins_dir / "neo4j-kafka-connect-5.5.0"
     if not plugin_path.exists():
-        print("📥 Neo4j Kafka Connector plugin not found. Downloading...")
+        print("Neo4j Kafka Connector plugin not found. Downloading...")
         plugins_dir.mkdir(exist_ok=True)
         req = urllib.request.Request(PLUGIN_URL, headers={"User-Agent": "Python"})
         with urllib.request.urlopen(req) as resp:
             content = resp.read()
-        print("📦 Extracting plugin to plugins/...")
+        print("Extracting plugin to plugins/...")
         with zipfile.ZipFile(io.BytesIO(content)) as z:
             z.extractall(plugins_dir)
-        print("✅ Plugin extracted successfully. (Restart kafka-connect if container is already running)")
+        print("Plugin extracted successfully. (Restart kafka-connect if container is already running)")
 
 
 def wait_for_service(url, name, max_retries=70, delay=3):
@@ -36,11 +36,11 @@ def wait_for_service(url, name, max_retries=70, delay=3):
             req = urllib.request.Request(url, headers={"User-Agent": "Python"})
             with urllib.request.urlopen(req, timeout=5) as resp:
                 if resp.status in (200, 401):
-                    print(f"✅ {name} is ready!")
+                    print(f"{name} is ready!")
                     return True
         except urllib.error.HTTPError as e:
             if e.code in (200, 401):
-                print(f"✅ {name} is ready!")
+                print(f"{name} is ready!")
                 return True
         except Exception:
             pass
@@ -72,11 +72,11 @@ def apply_neo4j_constraints():
             data = json.loads(resp.read().decode())
             errors = data.get("errors", [])
             if errors:
-                print(f"⚠️ Neo4j Cypher error: {errors}")
+                print(f"️ Neo4j Cypher error: {errors}")
             else:
-                print("✅ Neo4j constraints & relationship indexes applied successfully.")
+                print("Neo4j constraints & relationship indexes applied successfully.")
     except Exception as e:
-        print(f"⚠️ Error applying Neo4j constraints: {e}")
+        print(f"️ Error applying Neo4j constraints: {e}")
 
 
 def register_connector(config_path: Path):
@@ -102,9 +102,9 @@ def register_connector(config_path: Path):
     try:
         with urllib.request.urlopen(post_req) as resp:
             res = json.loads(resp.read().decode())
-            print(f"✅ Connector '{connector_name}' registered successfully.")
+            print(f"Connector '{connector_name}' registered successfully.")
     except urllib.error.HTTPError as e:
-        print(f"⚠️ Failed to register '{connector_name}': {e.read().decode()}")
+        print(f"️ Failed to register '{connector_name}': {e.read().decode()}")
 
 
 def check_connector_status():

@@ -76,7 +76,7 @@ Tóm tắt:
 **Envelope chung** (mọi message value): `schema_version` (`"v1"`), `event_timestamp` (ISO 8601 UTC),
 `repo_commit`, và `file_path`. Value được serialize **JSON (UTF-8)**; key là chuỗi `file_path` (UTF-8).
 
-### ⚠️ Idempotency — điểm mấu chốt cho Task 4
+### ️ Idempotency — điểm mấu chốt cho Task 4
 Chống trùng **KHÔNG** đến từ Kafka key. Nó đến từ việc **`MERGE` theo `node_id` / `edge_id` nằm
 trong PAYLOAD** của message:
 

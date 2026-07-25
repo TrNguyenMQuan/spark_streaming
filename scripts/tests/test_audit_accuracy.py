@@ -19,7 +19,7 @@ def get_ast_ground_truth(file_path: Path):
         source = file_path.read_text(encoding="utf-8", errors="replace")
         tree = ast.parse(source)
     except Exception as exc:
-        print(f"  ⚠️ Error parsing ground truth for {file_path.name}: {exc}")
+        print(f"  ️ Error parsing ground truth for {file_path.name}: {exc}")
         return {"functions": set(), "classes": set(), "total_nodes": 0}
 
     functions = set()
