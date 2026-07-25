@@ -33,6 +33,8 @@ jobs:
 
       - name: Build Jupyter Book HTML Site
         working-directory: notebooks
+        env:
+          BASE_URL: /spark_streaming
         run: myst build --html
 
       - name: Deploy to gh-pages branch
