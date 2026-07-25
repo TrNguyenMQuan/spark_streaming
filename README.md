@@ -148,7 +148,7 @@ python parser-service/parser.py --publish
 python scripts/tests/run_all_tests.py
 
 # Or run with --pause to freeze mutated state for evidence screenshots:
-python scripts/tests/test_tc1_add_function.py --pause
+python scripts/tests/testcase1_add_function.py --pause
 ```
 
 ---
