@@ -1,6 +1,6 @@
 # Lab 04 — Incremental CPG Streaming Pipeline
 
-> Big Data Course — VNUHCM University of Science  
+> Big Data Course — VNUHCM University of Science
 > **Topic**: Incremental Code Property Graph (CPG) Construction with Real-time Event Streaming Architecture
 
 ---
@@ -10,6 +10,7 @@
 The diagram below describes the complete multi-stage streaming pipeline architecture, mapping Tasks 1 to 6 from Python source parsing to dual database persistence (Neo4j Graph DB & MongoDB Document DB) and automated QA verification:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 12, 'bottom': 28}}}}%%
 flowchart TD
     subgraph Task1 ["1. Data Source and File Discovery - Task 1"]
         Repo["GitHub Python Repository - target-repo"]
@@ -21,7 +22,7 @@ flowchart TD
         AST_Visitor["AST NodeVisitor Engine - parser-service/cpg_visitor.py"]
         Hasher["SHA-256 Scope Hasher - parser-service/stable_id.py"]
         Schemas["JSON Schemas v1 Envelope - parser-service/schemas"]
-        
+
         Discover -->|Stream one file at a time| AST_Visitor
         AST_Visitor -->|Extract AST, CFG, DFG, CALL| Hasher
         Hasher -->|Assign Stable Node and Edge IDs| Schemas
@@ -29,7 +30,7 @@ flowchart TD
 
     subgraph Task3 ["3. Kafka Event Streaming Backbone - Task 3"]
         Producer["Kafka Producer Service - parser-service/kafka_producer.py"]
-        
+
         subgraph Topics ["Kafka KRaft Broker - localhost:9092"]
             T_Nodes["code.events.nodes - 3 Partitions, Key=file_path"]
             T_Edges["code.events.edges - 3 Partitions, Key=file_path"]
@@ -84,6 +85,8 @@ flowchart TD
     style Task5 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     style Task6 fill:#fffde7,stroke:#fbc02d,stroke-width:2px
 ```
+
+
 
 ### Data Flow Summary
 
@@ -228,5 +231,5 @@ npm install -g mystmd
 myst build --html
 ```
 
-The book is automatically built and deployed to GitHub Pages on push to `main` or `feature/verification`:  
+The book is automatically built and deployed to GitHub Pages on push to `main` or `feature/verification`:
 **`https://TrNguyenMQuan.github.io/spark_streaming/`**

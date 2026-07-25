@@ -10,6 +10,7 @@
 The diagram below describes the complete multi-stage streaming pipeline architecture, mapping Tasks 1 to 6 from Python source parsing to dual database persistence (Neo4j Graph DB & MongoDB Document DB) and automated QA verification:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 12, 'bottom': 28}}}}%%
 flowchart TD
     subgraph Task1 ["1. Data Source and File Discovery - Task 1"]
         Repo["GitHub Python Repository - target-repo"]
@@ -84,6 +85,7 @@ flowchart TD
     style Task5 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     style Task6 fill:#fffde7,stroke:#fbc02d,stroke-width:2px
 ```
+
 
 ### Data Flow Summary
 
